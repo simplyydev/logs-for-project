@@ -11,24 +11,23 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const supabase = createBrowserSupabase();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
-      }
-      router.push('/admin');
-    } catch (err) {
-      setError('Login failed. Configure Supabase env vars and auth before production use.');
-      setLoading(false);
-    }
+  async function handleLogin(e: React.FormEvent) {
+  e.preventDefault();
+
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (res.ok) {
+    window.location.href = '/admin';
+  } else {
+    alert('Login failed');
   }
+}
 
   return (
     <main className="container">
