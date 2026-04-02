@@ -1,6 +1,12 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
+type Cookie = {
+  name: string;
+  value: string;
+  options?: any;
+};
+
 export async function POST(req: Request) {
   const { email, password } = await req.json();
 
@@ -12,14 +18,17 @@ export async function POST(req: Request) {
     {
       cookies: {
         getAll() {
-          return req.headers.get('cookie')
-            ?.split(';')
-            .map((c) => {
-              const [name, ...rest] = c.trim().split('=');
-              return { name, value: rest.join('=') };
-            }) || [];
+          return (
+            req.headers
+              .get('cookie')
+              ?.split(';')
+              .map((c) => {
+                const [name, ...rest] = c.trim().split('=');
+                return { name, value: rest.join('=') };
+              }) || []
+          );
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: Cookie[]) {
           cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options);
           });
