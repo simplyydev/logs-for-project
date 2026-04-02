@@ -1,33 +1,55 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
 
-export async function GET(request: Request) {
-  const searchParams = new URL(request.url).searchParams;
-  const mode = searchParams.get('mode');
-  const role = searchParams.get('role');
+function maskText(text: string) {
+  if (!text) return '';
+  return text[0] + '*'.repeat(Math.max(3, text.length - 1));
+}
 
-  const isAdmin = mode === 'full' && role === 'admin';
+function redactLogs(logs: any[]) {
+  return logs.map((log) => ({
+    id: log.id,
+    timestamp: log.timestamp,
+    kind: log.kind,
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+    // Only show masked title
+    title: maskText(log.title),
 
-  const { data, error } = await supabase
+    // Everything else hidden
+    description_full: '*****',
+    files_full: [],
+    command_full: '*****',
+    approval_status: log.approval_status,
+    progress: log.progress,
+    visibility: log.visibility,
+  }));
+}
+
+export async function GET() {
+  const supabase = createClient();
+
+  // 🔐 Check logged-in user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // 📦 Fetch logs
+  const { data: logs, error } = await supabase
     .from('logs')
     .select('*')
     .order('timestamp', { ascending: false });
 
   if (error) {
-    return NextResponse.json({
-      ok: false,
-      error: error.message
-    });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  const isLoggedIn = !!user;
 
   return NextResponse.json({
     ok: true,
-    role: isAdmin ? 'admin' : 'public',
-    logs: data
+    role: isLoggedIn ? 'authenticated' : 'public',
+
+    // 🔥 KEY LOGIC
+    logs: isLoggedIn ? logs : redactLogs(logs),
   });
 }
