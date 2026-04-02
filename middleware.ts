@@ -2,16 +2,12 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    const token = request.cookies.get('sb-access-token');
 
-  if (!isAdminRoute) return NextResponse.next();
-
-  const hasSession =
-    request.cookies.get('sb-access-token') ||
-    request.cookies.get('sb:token');
-
-  if (!hasSession) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    if (!token) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
   }
 
   return NextResponse.next();

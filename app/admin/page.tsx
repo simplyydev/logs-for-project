@@ -1,8 +1,8 @@
-import { createServerClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
 export default async function AdminPage() {
-  const supabase = createServerClient();
+  const supabase = createClient();
 
   const {
     data: { user },
