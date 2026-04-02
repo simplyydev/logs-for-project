@@ -16,16 +16,16 @@ export default function HomePage() {
   useEffect(() => {
     const supabase = createClient();
 
-    // Get logged-in user
-    supabase.auth.getUser().then(({ data }) => {
+    async function init() {
+      const { data } = await supabase.auth.getUser();
       setUser(data.user);
-    });
 
-    // Fetch logs
-    fetchLogs('viewer').then((rows) => {
+      const rows = await fetchLogs('viewer');
       setLogs(rows);
       setLoading(false);
-    });
+    }
+
+    init();
   }, []);
 
   const approved = useMemo(
@@ -59,15 +59,13 @@ export default function HomePage() {
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <LivePill />
 
-          {/* SHOW LOGIN IF NOT LOGGED IN */}
-          {!user && (
+          {!user?.id && (
             <Link href="/login" className="button primary">
               Admin Login
             </Link>
           )}
 
-          {/* SHOW ADMIN PANEL ONLY IF LOGGED IN */}
-          {user && (
+          {user?.id && (
             <Link href="/admin" className="button primary">
               Admin Panel
             </Link>
@@ -123,12 +121,11 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* REDACTED DESCRIPTION */}
+              {/* REDACTED CONTENT */}
               <div className="desc">
                 {log.description || '********'}
               </div>
 
-              {/* FILES */}
               <div className="files">
                 Files: {(log.files || []).join(', ') || 'hidden'}
               </div>
