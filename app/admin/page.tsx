@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { getCurrentRole } from '@/lib/auth';
-import { fetchLogs } from '@/lib/log-services';
+import { fetchLogs } from '@/lib/log-service';
 import type { PublicLog } from '@/lib/types';
 import { AutoRefresh } from '@/app/components/auto-refresh';
 import { LivePill } from '@/app/components/live-pill';
