@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import { fetchLogs } from '@/lib/log-service';
 import type { PublicLog } from '@/lib/types';
 
-// ✅ FIXED IMPORTS (named exports)
+// ✅ Named imports
 import { AutoRefresh } from '@/app/components/auto-refresh';
 import { LivePill } from '@/app/components/live-pill';
 
@@ -14,13 +14,27 @@ export default function HomePage() {
   const [logs, setLogs] = useState<PublicLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // 🔥 important
 
   useEffect(() => {
     const supabase = createClient();
 
     async function init() {
       const { data } = await supabase.auth.getUser();
-      setUser(data.user);
+      const currentUser = data.user;
+
+      setUser(currentUser);
+
+      // 🔐 Check admin emails
+      const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
+        .split(',')
+        .map((e) => e.trim());
+
+      if (currentUser && adminEmails.includes(currentUser.email || '')) {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
 
       const rows = await fetchLogs('viewer');
       setLogs(rows);
@@ -61,13 +75,16 @@ export default function HomePage() {
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <LivePill />
 
-          {!user?.id && (
+          {/* 🔥 FIXED BUTTON LOGIC */}
+          {isAdmin === null && null}
+
+          {isAdmin === false && (
             <Link href="/login" className="button primary">
               Admin Login
             </Link>
           )}
 
-          {user?.id && (
+          {isAdmin === true && (
             <Link href="/admin" className="button primary">
               Admin Panel
             </Link>
@@ -123,6 +140,7 @@ export default function HomePage() {
                 </div>
               </div>
 
+              {/* 🔐 Redacted content */}
               <div className="desc">
                 {log.description || '********'}
               </div>
