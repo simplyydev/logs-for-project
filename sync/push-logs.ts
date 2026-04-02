@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
-import { sampleLogs } from '../lib/sample-data.ts';
+import { sampleLogs } from '../lib/sample-data';
 
 console.log("URL:", process.env.SUPABASE_URL);
 console.log("KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "loaded" : "missing");
