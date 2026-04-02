@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic'; // ✅ prevent build crash
+
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
@@ -34,18 +36,15 @@ export default function AdminPage() {
   const [query, setQuery] = useState('');
   const [approval, setApproval] = useState('all');
 
-  // 🔐 HARD BLOCK ACCESS
   useEffect(() => {
     async function protect() {
       const { data } = await supabase.auth.getUser();
 
       if (!data.user) {
-        // ❌ NOT LOGGED IN → BLOCK
-        router.replace('/login');
+        router.replace('/login'); // 🔐 block access
         return;
       }
 
-      // ✅ LOGGED IN → allow
       setUser(data.user);
 
       const rows = await fetchLogs('admin');
@@ -68,9 +67,8 @@ export default function AdminPage() {
 
   const progress = groupProgress(logs);
 
-  // ⛔ PREVENT FLASH BEFORE AUTH CHECK
   if (!user) {
-    return <div className="container">Checking access...</div>;
+    return <div className="container">🔐 Checking access...</div>;
   }
 
   return (
@@ -81,7 +79,7 @@ export default function AdminPage() {
         <div>
           <div className="title">Admin Log Console</div>
           <div className="sub">
-            🔐 Secure view · full logs visible
+            🔐 Secure admin view · full logs visible
           </div>
         </div>
         <LivePill />
@@ -114,7 +112,7 @@ export default function AdminPage() {
             Refresh
           </button>
 
-          {/* 📥 DOWNLOAD BUTTON */}
+          {/* 📥 DOWNLOAD LOGS */}
           <button
             className="button primary"
             onClick={() => {
@@ -202,7 +200,16 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <div className="progressBar">
+                    <div
+                      style={{
+                        marginTop: 8,
+                        height: 10,
+                        borderRadius: 999,
+                        background: '#0a1730',
+                        overflow: 'hidden',
+                        border: '1px solid var(--border)'
+                      }}
+                    >
                       <div
                         style={{
                           width: `${task.progress}%`,
