@@ -1,55 +1,36 @@
-'use client';
+import { createServerClient } from '@/utils/supabase/server';
+import { redirect } from 'next/navigation';
 
-import { useEffect, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
-import { fetchLogs } from '@/lib/log-service';
-import type { PublicLog } from '@/lib/types';
+export default async function AdminPage() {
+  const supabase = createServerClient();
 
-export default function AdminPage() {
-  const supabase = createClient();
-  const router = useRouter();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const [logs, setLogs] = useState<PublicLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  // ❌ NOT LOGGED IN → BLOCK HARD
+  if (!user) {
+    redirect('/login');
+  }
 
-  useEffect(() => {
-    async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser();
+  // 🔐 CHECK ADMIN EMAIL
+  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
+    .split(',')
+    .map((e) => e.trim());
 
-      // ❌ NOT LOGGED IN → REDIRECT
-      if (!user) {
-        router.push('/login');
-        return;
-      }
+  if (!adminEmails.includes(user.email || '')) {
+    redirect('/');
+  }
 
-      // 🔐 EMAIL CHECK
-      const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
-        .split(',')
-        .map(e => e.trim());
-
-      if (!adminEmails.includes(user.email || '')) {
-        router.push('/');
-        return;
-      }
-
-      // ✅ AUTHORIZED
-      const rows = await fetchLogs('admin');
-      setLogs(rows);
-      setLoading(false);
-    }
-
-    checkAuth();
-  }, []);
-
-  if (loading) return <div className="container">Checking access...</div>;
+  // ✅ ONLY NOW FETCH LOGS
+  const { data: logs } = await supabase.from('logs').select('*');
 
   return (
     <main className="container">
       <h1>Admin Log Console</h1>
 
-      {logs.map((log) => (
-        <div key={log.timestamp + log.title} className="card">
+      {logs?.map((log: any) => (
+        <div key={log.id} className="card">
           <h3>{log.title}</h3>
           <p>{log.description}</p>
         </div>

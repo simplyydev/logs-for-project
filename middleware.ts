@@ -4,17 +4,13 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
 
-  if (!isAdminRoute) {
-    return NextResponse.next();
-  }
+  if (!isAdminRoute) return NextResponse.next();
 
-  // 🔐 Check Supabase session cookie
-  const hasAuth =
+  const hasSession =
     request.cookies.get('sb-access-token') ||
     request.cookies.get('sb:token');
 
-  // ❌ NOT LOGGED IN → BLOCK
-  if (!hasAuth) {
+  if (!hasSession) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
