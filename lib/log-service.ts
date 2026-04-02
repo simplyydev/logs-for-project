@@ -1,19 +1,49 @@
-import { createBrowserSupabase } from './supabase';
-import { toAdminLog, toPublicLog } from './log-access';
-import type { LogRow, PublicLog } from './types';
+import { createClient } from '@/utils/supabase/client';
 
-export async function fetchLogs(role: 'admin' | 'viewer'): Promise<PublicLog[]> {
-  const supabase = createBrowserSupabase();
-  const { data, error } = await supabase
-    .from('logs')
-    .select('*')
-    .order('timestamp', { ascending: false })
-    .limit(100);
+export async function fetchLogs(role: 'admin' | 'viewer') {
+  const supabase = createClient();
 
-  if (error || !data) {
-    console.error('Failed to load logs', error);
-    return [];
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // 🔐 NOT LOGGED IN → ALWAYS VIEWER
+  if (!user) {
+    role = 'viewer';
   }
 
-  return (data as LogRow[]).map((row) => role === 'admin' ? toAdminLog(row) : toPublicLog(row));
+  // 🔐 OPTIONAL: EMAIL-BASED ADMIN CHECK
+  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
+    .split(',')
+    .map(e => e.trim());
+
+  const isAdmin = user && adminEmails.includes(user.email || '');
+
+  if (!isAdmin) {
+    role = 'viewer';
+  }
+
+  // ✅ SELECT BASED ON ROLE
+  if (role === 'admin') {
+    const { data } = await supabase.from('logs').select('*').order('timestamp', { ascending: false });
+    return data || [];
+  }
+
+  // 👁 VIEWER → REDACTED DATA ONLY
+  const { data } = await supabase
+    .from('logs')
+    .select(`
+      id,
+      timestamp,
+      kind,
+      title,
+      approval_status,
+      visibility
+    `)
+    .order('timestamp', { ascending: false });
+
+  return (data || []).map(log => ({
+    ...log,
+    description: '***************',
+    files: ['hidden'],
+    command: 'hidden'
+  }));
 }
