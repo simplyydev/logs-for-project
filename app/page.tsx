@@ -5,8 +5,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { fetchLogs } from '@/lib/log-service';
 import type { PublicLog } from '@/lib/types';
-import AutoRefresh from '@/app/components/auto-refresh';
-import LivePill from '@/app/components/live-pill';
+
+// ✅ FIXED IMPORTS (named exports)
+import { AutoRefresh } from '@/app/components/auto-refresh';
+import { LivePill } from '@/app/components/live-pill';
 
 export default function HomePage() {
   const [logs, setLogs] = useState<PublicLog[]>([]);
@@ -121,7 +123,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* REDACTED CONTENT */}
               <div className="desc">
                 {log.description || '********'}
               </div>
