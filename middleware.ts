@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
+import { updateSession } from '@/utils/supabase/middleware';
 
 export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+  const response = updateSession(request);
   response.headers.set('x-frame-options', 'DENY');
   response.headers.set('x-content-type-options', 'nosniff');
   response.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
